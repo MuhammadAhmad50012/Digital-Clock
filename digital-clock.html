@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Digital Clock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #0d0d0f;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .clock-card {
+      text-align: center;
+      padding: 3rem 4rem;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      background: #141416;
+      position: relative;
+      overflow: hidden;
+    }
+    .clock-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #5b8aff, transparent);
+    }
+
+    .label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #5b8aff;
+      margin-bottom: 1.5rem;
+      font-weight: 400;
+    }
+
+    .time {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: clamp(3.5rem, 10vw, 6rem);
+      color: #f0f0f0;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+
+    .time .colon {
+      color: #5b8aff;
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.15; }
+    }
+
+    .seconds-bar-wrap {
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .seconds-bar {
+      height: 100%;
+      background: #5b8aff;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .date {
+      font-size: 13px;
+      color: #6b6b7a;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+
+    .ampm {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.5rem;
+      color: #5b8aff;
+      margin-left: 0.4rem;
+      vertical-align: baseline;
+    }
+    .toggle-wrap {
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      color: #6b6b7a;
+      letter-spacing: 0.05em;
+    }
+
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      cursor: pointer;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #2a2a2e;
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+
+    .slider::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; top: 3px;
+      background: #6b6b7a;
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .toggle input:checked + .slider { background: #1c2c52; }
+    .toggle input:checked + .slider::after { transform: translateX(18px); background: #5b8aff; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .colon { animation: none; }
+      .seconds-bar { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="clock-card">
+  <p class="label">Current Time</p>
+
+  <div class="time" id="time">
+    <span id="hours">00</span><span class="colon">:</span><span id="minutes">00</span><span class="colon">:</span><span id="seconds">00</span><span class="ampm" id="ampm"></span>
+  </div>
+
+  <div class="seconds-bar-wrap">
+    <div class="seconds-bar" id="seconds-bar"></div>
+  </div>
+
+  <p class="date" id="date">Loading...</p>
+
+  <div class="toggle-wrap">
+    <span class="toggle-label">24h</span>
+    <label class="toggle">
+      <input type="checkbox" id="toggle24" />
+      <span class="slider"></span>
+    </label>
+    <span class="toggle-label">12h</span>
+  </div>
+</div>
+
+<script>
+
+  const hoursEl    = document.getElementById('hours');
+  const minsEl     = document.getElementById('minutes');
+  const secsEl     = document.getElementById('seconds');
+  const ampmEl     = document.getElementById('ampm');
+  const dateEl     = document.getElementById('date');
+  const barEl      = document.getElementById('seconds-bar');
+  const toggle     = document.getElementById('toggle24');
+
+  function pad(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function updateClock() {
+    const now  = new Date();
+    const use12 = toggle.checked;    
+
+    let h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+
+    if (use12) {
+      const period = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;              
+      ampmEl.textContent = period;
+    } else {
+      ampmEl.textContent = '';       
+    }
+
+    hoursEl.textContent = pad(h);
+    minsEl.textContent  = pad(m);
+    secsEl.textContent  = pad(s);
+
+    barEl.style.width = (s / 59 * 100) + '%';
+
+    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    dateEl.textContent =
+      days[now.getDay()] + ', ' + now.getDate() + ' ' +
+      months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+
+  updateClock();
+
+  setInterval(updateClock, 1000);
+
+  toggle.addEventListener('change', updateClock);
+</script>
+
+</body>
+</html>
